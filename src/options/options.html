@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HalalVision - Pengaturan</title>
+    <link rel="stylesheet" href="options.css">
+</head>
+
+<body>
+    <div class="options-container">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <span class="logo-icon">🕌</span>
+                <h1>HalalVision</h1>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item active" data-section="general">
+                    <span>⚙️</span> Umum
+                </li>
+                <li class="nav-item" data-section="detection">
+                    <span>👁️</span> Deteksi
+                </li>
+                <li class="nav-item" data-section="blur">
+                    <span>🌫️</span> Blur
+                </li>
+                <li class="nav-item" data-section="whitelist">
+                    <span>✅</span> Whitelist
+                </li>
+                <li class="nav-item" data-section="performance">
+                    <span>⚡</span> Performa
+                </li>
+                <li class="nav-item" data-section="about">
+                    <span>ℹ️</span> Tentang
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- General Section -->
+            <section id="general" class="settings-section active">
+                <h2>Pengaturan Umum</h2>
+
+                <div class="setting-group">
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <h3>Aktifkan HalalVision</h3>
+                            <p>Aktifkan atau nonaktifkan extension secara global</p>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="enabled">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <h3>Otomatis Aktif saat Browser Dibuka</h3>
+                            <p>Extension akan aktif secara otomatis setiap kali browser dibuka</p>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="autoEnableOnStart">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <h3>Tampilkan Notifikasi</h3>
+                            <p>Tampilkan notifikasi saat konten diblur</p>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="showNotifications">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Detection Section -->
+            <section id="detection" class="settings-section">
+                <h2>Pengaturan Deteksi</h2>
+
+                <div class="setting-group">
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <h3>Deteksi Wajah</h3>
+                            <p>Deteksi dan blur wajah perempuan</p>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="blurFaces">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <h3>Deteksi Tubuh</h3>
+                            <p>Deteksi dan blur tubuh perempuan</p>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="blurBodies">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <h3>Proses Gambar</h3>
+                            <p>Deteksi dan blur gambar statis</p>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="processImages">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <h3>Proses Video</h3>
+                            <p>Deteksi dan blur konten video</p>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="processVideos">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="setting-row slider-row">
+                        <div class="setting-info">
+                            <h3>Sensitivitas Deteksi</h3>
+                            <p>Seberapa sensitif AI mendeteksi subjek (0.1 - 1.0)</p>
+                        </div>
+                        <div class="slider-control">
+                            <input type="range" id="detectionSensitivity" min="0.1" max="1" step="0.1">
+                            <span id="sensitivityValue">0.7</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Blur Section -->
+            <section id="blur" class="settings-section">
+                <h2>Pengaturan Blur</h2>
+
+                <div class="setting-group">
+                    <div class="setting-row slider-row">
+                        <div class="setting-info">
+                            <h3>Intensitas Blur</h3>
+                            <p>Seberapa kuat efek blur yang diterapkan (5 - 50)</p>
+                        </div>
+                        <div class="slider-control">
+                            <input type="range" id="blurIntensity" min="5" max="50">
+                            <span id="blurIntensityValue">25</span>
+                        </div>
+                    </div>
+
+                    <div class="blur-preview">
+                        <h3>Preview Blur</h3>
+                        <div class="preview-container">
+                            <div class="preview-box original">
+                                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150'%3E%3Crect fill='%2310B981' width='150' height='150'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='white' font-size='14'%3EOriginal%3C/text%3E%3C/svg%3E"
+                                    alt="Original">
+                                <span>Original</span>
+                            </div>
+                            <div class="preview-box blurred">
+                                <img id="blurPreview"
+                                    src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150'%3E%3Crect fill='%2310B981' width='150' height='150'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='white' font-size='14'%3EBlurred%3C/text%3E%3C/svg%3E"
+                                    alt="Blurred">
+                                <span>Diblur</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Whitelist Section -->
+            <section id="whitelist" class="settings-section">
+                <h2>Whitelist Situs</h2>
+                <p class="section-description">Situs yang ada di whitelist tidak akan diproses oleh HalalVision</p>
+
+                <div class="setting-group">
+                    <div class="add-site">
+                        <input type="text" id="newSite" placeholder="contoh: google.com">
+                        <button id="addSiteBtn" class="btn btn-primary">+ Tambah</button>
+                    </div>
+
+                    <div class="whitelist-container">
+                        <ul id="whitelistItems" class="site-list">
+                            <!-- Dynamic content -->
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Performance Section -->
+            <section id="performance" class="settings-section">
+                <h2>Pengaturan Performa</h2>
+
+                <div class="setting-group">
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <h3>Mode Performa</h3>
+                            <p>Pilih keseimbangan antara kecepatan dan akurasi</p>
+                        </div>
+                        <select id="performanceMode" class="select-input">
+                            <option value="fast">Cepat (Akurasi Rendah)</option>
+                            <option value="balanced">Seimbang</option>
+                            <option value="accurate">Akurat (Lebih Lambat)</option>
+                        </select>
+                    </div>
+
+                    <div class="performance-info">
+                        <div class="info-card">
+                            <h4>💡 Tips Performa</h4>
+                            <ul>
+                                <li>Mode "Cepat" cocok untuk komputer dengan spesifikasi rendah</li>
+                                <li>Mode "Akurat" menggunakan lebih banyak resource tapi hasil lebih baik</li>
+                                <li>Matikan "Proses Video" jika mengalami lag</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- About Section -->
+            <section id="about" class="settings-section">
+                <h2>Tentang HalalVision</h2>
+
+                <div class="about-content">
+                    <div class="about-logo">
+                        <span>🕌</span>
+                        <h3>HalalVision</h3>
+                        <p>Versi 1.0.1</p>
+                        <p class="author-credit">Dikembangkan oleh <a href="https://instagram.com/ardel.yo"
+                                target="_blank">@ardel.yo</a></p>
+                    </div>
+
+                    <div class="about-description">
+                        <p>
+                            HalalVision adalah extension browser yang membantu umat Muslim dalam menjaga
+                            pandangan (ghadhdul bashar) saat menjelajahi internet. Extension ini menggunakan
+                            teknologi AI untuk mendeteksi dan memblur konten yang mungkin tidak sesuai
+                            dengan nilai-nilai Islam.
+                        </p>
+                    </div>
+
+                    <div class="quran-verse">
+                        <blockquote>
+                            "Katakanlah kepada laki-laki yang beriman, hendaklah mereka menjaga
+                            pandangannya, dan memelihara kemaluannya; yang demikian itu adalah
+                            lebih suci bagi mereka. Sesungguhnya Allah Maha Mengetahui apa yang
+                            mereka perbuat."
+                        </blockquote>
+                        <cite>— QS. An-Nur: 30</cite>
+                    </div>
+
+                    <div class="credits">
+                        <h4>Teknologi yang Digunakan</h4>
+                        <ul>
+                            <li>TensorFlow.js - Machine Learning di Browser</li>
+                            <li>BlazeFace - Deteksi Wajah</li>
+                            <li>BodyPix - Segmentasi Tubuh</li>
+                        </ul>
+                    </div>
+
+                    <div class="actions">
+                        <button id="resetBtn" class="btn btn-secondary">🔄 Reset ke Default</button>
+                        <button id="exportBtn" class="btn btn-secondary">📤 Export Pengaturan</button>
+                        <button id="importBtn" class="btn btn-secondary">📥 Import Pengaturan</button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="options.js"></script>
+</body>
+
+</html>

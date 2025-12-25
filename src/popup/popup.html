@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="id" dir="ltr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HalalVision</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+
+<body>
+    <div class="popup-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <span class="logo-icon">🕌</span>
+                <h1>HalalVision</h1>
+            </div>
+            <p class="tagline">Menjaga Pandangan Anda</p>
+        </header>
+
+        <!-- Main Toggle -->
+        <section class="main-toggle">
+            <div class="toggle-wrapper">
+                <label class="switch">
+                    <input type="checkbox" id="mainToggle">
+                    <span class="slider"></span>
+                </label>
+                <span class="toggle-label" id="toggleLabel">Aktif</span>
+            </div>
+            <p class="status-text" id="statusText">Extension sedang aktif melindungi pandangan Anda</p>
+        </section>
+
+        <!-- Quick Settings -->
+        <section class="quick-settings">
+            <h2>Pengaturan Cepat</h2>
+
+            <div class="setting-item">
+                <label>
+                    <input type="checkbox" id="blurFaces" checked>
+                    <span>Blur Wajah</span>
+                </label>
+            </div>
+
+            <div class="setting-item">
+                <label>
+                    <input type="checkbox" id="blurBodies" checked>
+                    <span>Blur Tubuh</span>
+                </label>
+            </div>
+
+            <div class="setting-item">
+                <label>
+                    <input type="checkbox" id="processVideos" checked>
+                    <span>Proses Video</span>
+                </label>
+            </div>
+
+            <div class="setting-item slider-item">
+                <label for="blurIntensity">Intensitas Blur</label>
+                <input type="range" id="blurIntensity" min="5" max="50" value="25">
+                <span id="blurValue">25</span>
+            </div>
+        </section>
+
+        <!-- Statistics -->
+        <section class="stats">
+            <h2>Statistik Hari Ini</h2>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <span class="stat-number" id="imagesBlurred">0</span>
+                    <span class="stat-label">Gambar Diblur</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number" id="videosBlurred">0</span>
+                    <span class="stat-label">Video Diblur</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Current Site Actions -->
+        <section class="site-actions">
+            <h2>Situs Ini</h2>
+            <div class="site-info">
+                <span class="site-domain" id="currentDomain">example.com</span>
+                <span class="site-status" id="siteStatus">Diproses</span>
+            </div>
+            <div class="action-buttons">
+                <button id="whitelistBtn" class="btn btn-secondary">
+                    <span>➕</span> Whitelist
+                </button>
+                <button id="refreshBtn" class="btn btn-primary">
+                    <span>🔄</span> Refresh
+                </button>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <button id="settingsBtn" class="link-btn">⚙️ Pengaturan Lengkap</button>
+            <p class="credit">Dibuat dengan ❤️ oleh <a href="https://instagram.com/ardel.yo"
+                    target="_blank">@ardel.yo</a></p>
+            <p class="verse">
+                "Katakanlah kepada laki-laki yang beriman, hendaklah mereka menjaga pandangannya"
+                <br><small>- QS. An-Nur: 30</small>
+            </p>
+        </footer>
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+
+</html>

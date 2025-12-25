@@ -1,0 +1,61 @@
+{
+    "manifest_version": 3,
+    "name": "HalalVision - Penjaga Pandangan",
+    "version": "1.0.2",
+    "description": "Extension untuk menjaga pandangan dengan memblur konten yang tidak sesuai syariat",
+    "author": "@ardel.yo",
+    "permissions": [
+        "storage",
+        "activeTab",
+        "scripting",
+        "contextMenus"
+    ],
+    "host_permissions": [
+        "<all_urls>"
+    ],
+    "background": {
+        "service_worker": "src/background/service-worker.js",
+        "type": "module"
+    },
+    "content_scripts": [
+        {
+            "matches": [
+                "<all_urls>"
+            ],
+            "js": [
+                "libs/tf.min.js",
+                "libs/blazeface.min.js",
+                "libs/body-pix.min.js",
+                "src/content/content-script.js"
+            ],
+            "css": [
+                "styles/content.css"
+            ],
+            "run_at": "document_start"
+        }
+    ],
+    "action": {
+        "default_popup": "src/popup/popup.html",
+        "default_icon": "assets/icons/icon.svg",
+        "default_title": "HalalVision"
+    },
+    "options_page": "src/options/options.html",
+    "icons": {
+        "128": "assets/icons/icon.svg"
+    },
+    "web_accessible_resources": [
+        {
+            "resources": [
+                "models/*",
+                "src/ml/*",
+                "assets/*"
+            ],
+            "matches": [
+                "<all_urls>"
+            ]
+        }
+    ],
+    "content_security_policy": {
+        "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
+    }
+}

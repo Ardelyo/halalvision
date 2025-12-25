@@ -1,0 +1,412 @@
+/* HalalVision Popup Styles */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #1a472a 0%, #2d5a3f 100%);
+    min-width: 320px;
+    color: #333;
+}
+
+.popup-container {
+    background: white;
+    margin: 8px;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* Header */
+.header {
+    background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+    color: white;
+    padding: 20px;
+    text-align: center;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 5px;
+}
+
+.logo-icon {
+    font-size: 28px;
+}
+
+.logo h1 {
+    font-size: 24px;
+    font-weight: 600;
+}
+
+.tagline {
+    font-size: 12px;
+    opacity: 0.9;
+}
+
+/* Main Toggle */
+.main-toggle {
+    padding: 20px;
+    text-align: center;
+    border-bottom: 1px solid #eee;
+}
+
+.toggle-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 32px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: 0.3s;
+    border-radius: 32px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 24px;
+    width: 24px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: 0.3s;
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+input:checked+.slider {
+    background-color: #10B981;
+}
+
+input:checked+.slider:before {
+    transform: translateX(28px);
+}
+
+.toggle-label {
+    font-size: 16px;
+    font-weight: 600;
+    color: #10B981;
+}
+
+.status-text {
+    font-size: 12px;
+    color: #666;
+}
+
+/* Quick Settings */
+.quick-settings {
+    padding: 15px 20px;
+    border-bottom: 1px solid #eee;
+}
+
+.quick-settings h2 {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.setting-item {
+    margin-bottom: 10px;
+}
+
+.setting-item label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.setting-item input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: #10B981;
+}
+
+.slider-item {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-top: 15px;
+}
+
+.slider-item label {
+    font-size: 14px;
+    color: #333;
+}
+
+.slider-item input[type="range"] {
+    width: 100%;
+    accent-color: #10B981;
+}
+
+.slider-item span {
+    text-align: right;
+    font-size: 12px;
+    color: #666;
+}
+
+/* Statistics */
+.stats {
+    padding: 15px 20px;
+    background: #f8fdf9;
+    border-bottom: 1px solid #eee;
+}
+
+.stats h2 {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.stat-item {
+    text-align: center;
+    padding: 15px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.stat-number {
+    display: block;
+    font-size: 28px;
+    font-weight: 700;
+    color: #10B981;
+    margin-bottom: 5px;
+}
+
+.stat-label {
+    font-size: 11px;
+    color: #666;
+    text-transform: uppercase;
+}
+
+/* Site Actions */
+.site-actions {
+    padding: 15px 20px;
+    border-bottom: 1px solid #eee;
+}
+
+.site-actions h2 {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.site-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding: 10px;
+    background: #f5f5f5;
+    border-radius: 8px;
+}
+
+.site-domain {
+    font-size: 13px;
+    font-weight: 600;
+    color: #333;
+}
+
+.site-status {
+    font-size: 11px;
+    padding: 3px 8px;
+    background: #10B981;
+    color: white;
+    border-radius: 10px;
+}
+
+.site-status.whitelisted {
+    background: #6366F1;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.btn {
+    flex: 1;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    transition: all 0.2s;
+}
+
+.btn-primary {
+    background: #10B981;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #059669;
+}
+
+.btn-secondary {
+    background: #f0f0f0;
+    color: #333;
+}
+
+.btn-secondary:hover {
+    background: #e0e0e0;
+}
+
+/* Footer */
+.footer {
+    padding: 15px 20px;
+    text-align: center;
+}
+
+.credit {
+    font-size: 11px;
+    color: #666;
+    margin-bottom: 10px;
+}
+
+.credit a {
+    color: #10B981;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.link-btn {
+    background: none;
+    border: none;
+    color: #10B981;
+    font-size: 13px;
+    cursor: pointer;
+    margin-bottom: 10px;
+    padding: 5px 10px;
+}
+
+.link-btn:hover {
+    text-decoration: underline;
+}
+
+.verse {
+    font-size: 11px;
+    color: #888;
+    font-style: italic;
+    line-height: 1.5;
+}
+
+.verse small {
+    display: block;
+    margin-top: 5px;
+    color: #10B981;
+}
+
+/* Disabled State */
+body.disabled .main-toggle .toggle-label {
+    color: #EF4444;
+}
+
+body.disabled .site-status {
+    background: #EF4444;
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+    .popup-container {
+        background: #1a1a1a;
+        color: #eee;
+    }
+
+    .main-toggle,
+    .quick-settings,
+    .site-actions,
+    .footer {
+        border-color: #333;
+    }
+
+    .status-text,
+    .quick-settings h2,
+    .stats h2,
+    .site-actions h2 {
+        color: #aaa;
+    }
+
+    .setting-item label,
+    .slider-item label {
+        color: #eee;
+    }
+
+    .stats {
+        background: #222;
+    }
+
+    .stat-item {
+        background: #2a2a2a;
+    }
+
+    .site-info {
+        background: #2a2a2a;
+    }
+
+    .site-domain {
+        color: #eee;
+    }
+
+    .btn-secondary {
+        background: #333;
+        color: #eee;
+    }
+
+    .btn-secondary:hover {
+        background: #444;
+    }
+
+    .verse {
+        color: #777;
+    }
+}
