@@ -37,19 +37,6 @@
         detector = new HalalVisionDetector();
         await detector.initialize();
 
-        // Immediate blur for all existing images as a safety precaution while AI scans
-        // But only if settings allow
-        if (settings.processImages) {
-            const allImgs = document.querySelectorAll('img');
-            allImgs.forEach(img => {
-                if (isImageValid(img)) {
-                    // Start with a fallback blur immediately
-                    const engine = new BlurEngine();
-                    engine.applyBlur(img, { isFallback: true });
-                }
-            });
-        }
-
         // Process existing images with AI
         await processExistingMedia();
 
@@ -60,7 +47,7 @@
         setInterval(processExistingMedia, 5000);
 
         isInitialized = true;
-        console.log('🕌 HalalVision: Ready - Menjaga pandangan Anda');
+        console.log('延 HalalVision: Ready - Menjaga pandangan Anda');
     }
 
     // Get settings from background
@@ -88,77 +75,48 @@
     // ML Detector Class
     class HalalVisionDetector {
         constructor() {
-            this.faceModel = null;
-            this.bodyModel = null;
-            this.genderModel = null;
             this.isLoaded = false;
+            // FaceAPI models
+            this.modelsLoaded = false;
         }
 
         async initialize() {
             try {
-                // Models are now pre-loaded via manifest content_scripts
-                console.log('🕌 HalalVision: ML Models pre-loading check...');
+                console.log('🕌 HalalVision: Initializing Face-API...');
 
-                // Wait for globals to be available (manifest scripts should ensure this)
-                let retryCount = 0;
-                while (typeof tf === 'undefined' && retryCount < 10) {
-                    await new Promise(r => setTimeout(r, 200));
-                    retryCount++;
+                // Helper to wait for global faceapi if needed
+                let retry = 0;
+                while (typeof faceapi === 'undefined' && retry < 20) {
+                    await new Promise(r => setTimeout(r, 100));
+                    retry++;
                 }
 
-                if (typeof tf === 'undefined') {
-                    throw new Error('TensorFlow.js not loaded after retries');
+                if (typeof faceapi === 'undefined') {
+                    throw new Error('face-api.js not found');
                 }
 
-                // Initialize models
-                this.faceModel = await blazeface.load();
-                this.bodyModel = await bodyPix.load({
-                    architecture: 'MobileNetV1',
-                    outputStride: 16,
-                    multiplier: settings.performanceMode === 'fast' ? 0.5 : 0.75,
-                    quantBytes: 2
-                });
+                // Load models from local extension directory
+                const modelPath = chrome.runtime.getURL('libs/models');
+
+                await Promise.all([
+                    faceapi.nets.tinyFaceDetector.loadFromUri(modelPath),
+                    faceapi.nets.ageGenderNet.loadFromUri(modelPath)
+                ]);
+
+                // Also load BodyPix (it uses tf global)
+                if (typeof bodyPix !== 'undefined') {
+                    this.bodyModel = await bodyPix.load({
+                        architecture: 'MobileNetV1',
+                        outputStride: 16,
+                        multiplier: 0.5, // Keep it fast
+                        quantBytes: 2
+                    });
+                }
 
                 this.isLoaded = true;
-                console.log('🕌 HalalVision: ML Models initialized');
+                console.log('🕌 HalalVision: AI Models (Face-API + BodyPix) Ready');
             } catch (error) {
-                console.error('🕌 HalalVision: Failed to initialize models:', error);
-                // We keep isLoaded false but fallback will handle images
-            }
-        }
-
-        async loadTensorFlow() { /* No longer needed as separate step */ }
-        async loadFaceDetector() { /* No longer needed as separate step */ }
-        async loadBodySegmentation() { /* No longer needed as separate step */ }
-        async loadGenderClassifier() { /* No longer needed as separate step */ }
-
-        injectScript(src) { /* No longer needed as separate step */ }
-
-        async detectFaces(imageElement) {
-            if (!this.faceModel) return [];
-
-            try {
-                const predictions = await this.faceModel.estimateFaces(imageElement, false);
-                return predictions;
-            } catch (error) {
-                console.error('Face detection error:', error);
-                return [];
-            }
-        }
-
-        async segmentBody(imageElement) {
-            if (!this.bodyModel) return null;
-
-            try {
-                const segmentation = await this.bodyModel.segmentPerson(imageElement, {
-                    flipHorizontal: false,
-                    internalResolution: settings.performanceMode === 'fast' ? 'low' : 'medium',
-                    segmentationThreshold: settings.detectionSensitivity
-                });
-                return segmentation;
-            } catch (error) {
-                console.error('Body segmentation error:', error);
-                return null;
+                console.error('🕌 HalalVision: Model load failed:', error);
             }
         }
 
@@ -170,42 +128,130 @@
                 isFallback: !this.isLoaded
             };
 
-            // If models aren't loaded, always blur for safety (fallback mode)
-            if (!this.isLoaded) {
-                results.shouldBlur = true;
-                return results;
-            }
+            if (!this.isLoaded) return results; // Fail safe, don't blur if not ready
 
             try {
-                // Detect faces
-                if (settings.blurFaces && this.faceModel) {
-                    results.faces = await this.detectFaces(imageElement);
+                // 1. Detect Faces & Gender with Face-API
+                if (settings.blurFaces || settings.blurMen || settings.blurWomen) {
+                    // Detect all faces with gender
+                    // useTinyFaceDetectorOptions helps performance
+                    const detections = await faceapi.detectAllFaces(
+                        imageElement,
+                        new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.4 })
+                    ).withAgeAndGender();
+
+                    for (const detection of detections) {
+                        const { gender, genderProbability } = detection;
+                        const box = detection.detection.box;
+
+                        // Strict Gender Logic
+                        // Default to safe if probability is low (< 0.6) -> Treat as "Unknown" -> Blur if strict checks enabled
+                        let effectiveGender = gender;
+                        if (genderProbability < 0.6) effectiveGender = 'unknown';
+
+                        let shouldBlurFace = false;
+
+                        if (settings.blurFaces) {
+                            // If "Blur All Faces" is on, we blur regardless of gender
+                            shouldBlurFace = true;
+                        } else {
+                            // Specific gender targeting
+                            if (settings.blurMen && effectiveGender === 'male') shouldBlurFace = true;
+                            if (settings.blurWomen && effectiveGender === 'female') shouldBlurFace = true;
+
+                            // Safety: If unknown gender, do we blur? 
+                            // Current logic: If user wants to blur EITHER men or women, and we are unsure, 
+                            // safest bet is to blur. BUT user complained about over-blurring.
+                            // So let's be "Innocent until proven guilty" to avoid annoyance, 
+                            // UNLESS user enabled "Blur Faces" (checked above).
+                            // So here we only blur if confident.
+                        }
+
+                        if (shouldBlurFace) {
+                            // Convert FaceAPI box to our format
+                            results.faces.push({
+                                topLeft: [box.x, box.y],
+                                bottomRight: [box.x + box.width, box.y + box.height]
+                            });
+                        }
+                    }
                 }
 
-                // Segment body
-                if (settings.blurBodies && this.bodyModel) {
-                    results.bodySegmentation = await this.segmentBody(imageElement);
+                // 2. Body Detection (BodyPix)
+                // Only run if we need to blur bodies
+                if (settings.blurBodies) {
+                    // Logic: If we found faces that needed blurring, we likely want to blur the body too.
+                    // If we found faces that were SAFE (e.g. valid gender), we might NOT want to blur the body.
+
+                    // Complex Case: A mixed photo (User wants to blur Women, photo has Man + Woman).
+                    // Face-API handles faces fine. BodyPix segments *everyone* as one mask usually (or id map).
+                    // BodyPix "person segmentation" doesn't distinguish gender.
+
+                    // Strategy: 
+                    // If ANY face was flagged to be blurred, we blur the body for safety.
+                    // If NO faces were detected at all (e.g. back shot), we blur the body if blurBodies is ON.
+                    // If FACES were detected but ALL were determined SAFE (e.g. Men only, and blurMen is OFF),
+                    // then we skip body blur to avoid blurring the "good" subjects.
+
+                    let runBodyPix = false;
+
+                    if (results.faces.length > 0) {
+                        // We found bad faces, so we definitely need to blur their bodies if possible
+                        runBodyPix = true;
+                    } else {
+                        // No bad faces found. 
+                        // Did we find ANY faces? 
+                        const allFaces = await faceapi.detectAllFaces(
+                            imageElement,
+                            new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.3 })
+                        );
+
+                        if (allFaces.length === 0) {
+                            // No faces at all. Could be a headless body shot.
+                            // Blur if blurBodies is ON.
+                            runBodyPix = true;
+                        } else {
+                            // We found faces, but none were added to results.faces
+                            // This means they were all "Safe" genders.
+                            // So we DO NOT blur the body.
+                            runBodyPix = false;
+                        }
+                    }
+
+                    if (runBodyPix) {
+                        results.bodySegmentation = await this.segmentBody(imageElement);
+                    }
                 }
 
-                // Determine if blur is needed
                 results.shouldBlur = results.faces.length > 0 ||
                     (results.bodySegmentation && this.hasPersonInSegmentation(results.bodySegmentation));
+
             } catch (err) {
-                console.log('Detection error, falling back to full blur');
-                results.shouldBlur = true;
-                results.isFallback = true;
+                // console.warn('Detection skipped:', err); // Suppress noise
             }
 
             return results;
         }
 
+        async segmentBody(imageElement) {
+            if (!this.bodyModel) return null;
+            try {
+                return await this.bodyModel.segmentPerson(imageElement, {
+                    internalResolution: 'medium',
+                    segmentationThreshold: 0.7,
+                    scoreThreshold: 0.5
+                });
+            } catch (e) { return null; }
+        }
+
         hasPersonInSegmentation(segmentation) {
             if (!segmentation || !segmentation.data) return false;
-            // More robust check: if more than 1% of pixels are a person
             const personPixelCount = segmentation.data.filter(val => val > 0).length;
-            const threshold = segmentation.data.length * 0.01;
+            const threshold = segmentation.data.length * 0.005; // 0.5% coverage
             return personPixelCount > threshold;
         }
+
+        // Removed old methods: detectFaces, classifyGender (replaced by face-api)
     }
 
     // Blur Engine Class
@@ -579,19 +625,26 @@
         if (settings.processImages) {
             const images = document.querySelectorAll('img');
             for (const img of images) {
-                if (processedElements.has(img)) continue;
                 if (!isImageValid(img)) continue;
 
-                // Mark for viewport observation or immediate process
+                // If already processed and NOT blurred, we might want to skip.
+                // But we should allow re-scans if the image src changed.
+                if (processedElements.has(img) && !blurredElements.has(img)) continue;
+
                 if (window.hvWatchMedia) {
-                    // Let the viewport observer handle it to save CPU
-                    processedElements.add(img);
-                    // Initial fallback blur for safety
-                    blurEngine.applyBlur(img, { isFallback: true });
+                    // Start observing for viewport entries
+                    window.hvWatchMedia();
+
+                    // Do not apply permanent blur immediately, wait for scan in viewport
+                    // But if it's already in viewport, trigger it
+                    const rect = img.getBoundingClientRect();
+                    if (rect.top < window.innerHeight && rect.bottom > 0) {
+                        processImage(img, blurEngine);
+                    }
                 } else {
                     processedElements.add(img);
                     if (!img.complete) {
-                        img.addEventListener('load', () => processImage(img, blurEngine));
+                        img.addEventListener('load', () => processImage(img, blurEngine), { once: true });
                     } else {
                         await processImage(img, blurEngine);
                     }
@@ -626,35 +679,47 @@
 
     // Process single image
     async function processImage(img, blurEngine) {
+        if (processedElements.has(img) && blurredElements.has(img)) {
+            // Already processed and blurred, maybe re-check if settings changed
+        }
+
         try {
             // Create temp canvas for analysis
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
-            canvas.width = img.naturalWidth || img.width;
-            canvas.height = img.naturalHeight || img.height;
 
-            // Handle CORS
-            const tempImg = new Image();
-            tempImg.crossOrigin = 'anonymous';
+            // Wait for image load if dimensions are 0
+            if (img.naturalWidth === 0) {
+                await new Promise((r) => img.addEventListener('load', r, { once: true }));
+            }
 
-            await new Promise((resolve, reject) => {
-                tempImg.onload = resolve;
-                tempImg.onerror = reject;
-                tempImg.src = img.src;
-            });
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
 
-            ctx.drawImage(tempImg, 0, 0);
+            // Simple check for canvas support and image validity
+            if (canvas.width === 0 || canvas.height === 0) return;
 
-            // Analyze image
-            const results = await detector.analyzeImage(canvas);
+            // Draw and analyze
+            ctx.drawImage(img, 0, 0);
+            const results = await detector.analyzeImage(img);
 
             if (results.shouldBlur) {
                 await blurEngine.applyBlur(img, results);
                 updateStats('image');
+            } else {
+                // If AI says it's safe, remove any pre-existing blur
+                blurEngine.removeBlur(img);
             }
+
+            processedElements.add(img);
         } catch (error) {
-            // CORS or other error - apply fallback blur if needed
-            console.log('Could not process image:', img.src.substring(0, 50));
+            console.log('Process error:', error);
+            // Fallback for CORS or complexity
+            if (detector.isLoaded) {
+                // If model is loaded but we had a technical error, 
+                // we might want to blur just in case if safe mode is high.
+                // For now, let's keep it clean to avoid over-blurring.
+            }
         }
     }
 

@@ -23,8 +23,8 @@
                 "<all_urls>"
             ],
             "js": [
+                "libs/face-api.min.js",
                 "libs/tf.min.js",
-                "libs/blazeface.min.js",
                 "libs/body-pix.min.js",
                 "src/content/content-script.js"
             ],

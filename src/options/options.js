@@ -116,7 +116,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Event Listeners
     const toggles = ['enabled', 'autoEnableOnStart', 'showNotifications',
-        'blurFaces', 'blurBodies', 'processImages', 'processVideos'];
+        'blurFaces', 'blurBodies', 'blurMen', 'blurWomen',
+        'processImages', 'processVideos'];
 
     toggles.forEach(id => {
         elements[id].addEventListener('change', async () => {

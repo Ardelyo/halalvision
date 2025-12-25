@@ -65,6 +65,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         blurFaces.checked = settings.blurFaces;
         blurBodies.checked = settings.blurBodies;
+        blurMen.checked = settings.blurMen;
+        blurWomen.checked = settings.blurWomen;
         processVideos.checked = settings.processVideos;
         blurIntensity.value = settings.blurIntensity;
         blurValue.textContent = settings.blurIntensity;

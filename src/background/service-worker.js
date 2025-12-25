@@ -7,6 +7,8 @@ const DEFAULT_SETTINGS = {
     blurIntensity: 25,
     blurFaces: true,
     blurBodies: true,
+    blurMen: true,
+    blurWomen: true,
     processVideos: true,
     processImages: true,
     whitelist: [],
@@ -20,17 +22,17 @@ const DEFAULT_SETTINGS = {
 // Initialize extension on install
 chrome.runtime.onInstalled.addListener(async (details) => {
     console.log('HalalVision installed:', details.reason);
-    
+
     if (details.reason === 'install') {
         // Set default settings
         await chrome.storage.sync.set({ settings: DEFAULT_SETTINGS });
-        
+
         // Open welcome/setup page
         chrome.tabs.create({
             url: 'src/options/options.html?welcome=true'
         });
     }
-    
+
     // Create context menu
     createContextMenus();
 });
@@ -43,19 +45,19 @@ function createContextMenus() {
             title: 'Toggle HalalVision',
             contexts: ['all']
         });
-        
+
         chrome.contextMenus.create({
             id: 'addToWhitelist',
             title: 'Tambah ke Whitelist',
             contexts: ['all']
         });
-        
+
         chrome.contextMenus.create({
             id: 'blurThisImage',
             title: 'Blur Gambar Ini',
             contexts: ['image']
         });
-        
+
         chrome.contextMenus.create({
             id: 'unblurThisImage',
             title: 'Unblur Gambar Ini',
@@ -74,15 +76,15 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
             await addCurrentSiteToWhitelist(tab);
             break;
         case 'blurSpecificImage':
-            await sendMessageToTab(tab.id, { 
-                action: 'blurSpecificImage', 
-                imageUrl: info.srcUrl 
+            await sendMessageToTab(tab.id, {
+                action: 'blurSpecificImage',
+                imageUrl: info.srcUrl
             });
             break;
         case 'unblurSpecificImage':
-            await sendMessageToTab(tab.id, { 
-                action: 'unblurSpecificImage', 
-                imageUrl: info.srcUrl 
+            await sendMessageToTab(tab.id, {
+                action: 'unblurSpecificImage',
+                imageUrl: info.srcUrl
             });
             break;
     }
@@ -93,20 +95,20 @@ async function toggleExtension() {
     const { settings } = await chrome.storage.sync.get('settings');
     settings.enabled = !settings.enabled;
     await chrome.storage.sync.set({ settings });
-    
+
     // Notify all tabs
     const tabs = await chrome.tabs.query({});
     for (const tab of tabs) {
         try {
-            await sendMessageToTab(tab.id, { 
-                action: 'settingsUpdated', 
-                settings 
+            await sendMessageToTab(tab.id, {
+                action: 'settingsUpdated',
+                settings
             });
         } catch (e) {
             // Tab might not have content script
         }
     }
-    
+
     // Update badge
     updateBadge(settings.enabled);
 }
@@ -115,16 +117,16 @@ async function toggleExtension() {
 async function addCurrentSiteToWhitelist(tab) {
     const url = new URL(tab.url);
     const domain = url.hostname;
-    
+
     const { settings } = await chrome.storage.sync.get('settings');
     if (!settings.whitelist.includes(domain)) {
         settings.whitelist.push(domain);
         await chrome.storage.sync.set({ settings });
-        
+
         // Notify tab
-        await sendMessageToTab(tab.id, { 
-            action: 'siteWhitelisted', 
-            domain 
+        await sendMessageToTab(tab.id, {
+            action: 'siteWhitelisted',
+            domain
         });
     }
 }
@@ -160,29 +162,29 @@ async function handleMessage(message, sender, sendResponse) {
             const { settings } = await chrome.storage.sync.get('settings');
             sendResponse({ settings: settings || DEFAULT_SETTINGS });
             break;
-            
+
         case 'updateSettings':
             await chrome.storage.sync.set({ settings: message.settings });
             updateBadge(message.settings.enabled);
             sendResponse({ success: true });
             break;
-            
+
         case 'getStats':
             const { stats } = await chrome.storage.local.get('stats');
             sendResponse({ stats: stats || { imagesProcessed: 0, videosProcessed: 0 } });
             break;
-            
+
         case 'updateStats':
             await chrome.storage.local.set({ stats: message.stats });
             sendResponse({ success: true });
             break;
-            
+
         case 'isWhitelisted':
             const result = await chrome.storage.sync.get('settings');
             const isWhitelisted = result.settings?.whitelist?.includes(message.domain) || false;
             sendResponse({ isWhitelisted });
             break;
-            
+
         default:
             sendResponse({ error: 'Unknown action' });
     }
