@@ -46,6 +46,7 @@
     "web_accessible_resources": [
         {
             "resources": [
+                "libs/models/*",
                 "models/*",
                 "src/ml/*",
                 "assets/*"

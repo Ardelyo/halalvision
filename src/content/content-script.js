@@ -12,43 +12,189 @@
     let processedElements = new WeakSet();
     let blurredElements = new Map();
 
-    // Initialize extension
-    async function initialize() {
-        if (isInitialized) return;
-
-        console.log('🕌 HalalVision: Initializing...');
-
-        // Get settings
-        settings = await getSettings();
-
-        if (!settings || !settings.enabled) {
-            console.log('🕌 HalalVision: Extension disabled');
-            return;
+    // UI Manager Class
+    class HalalVisionUI {
+        constructor() {
+            this.overlay = null;
+            this.logContainer = null;
+            this.title = null;
+            this.status = null;
+            this.isFinished = false;
         }
 
-        // Check whitelist
-        const isWhitelisted = await checkWhitelist();
-        if (isWhitelisted) {
-            console.log('🕌 HalalVision: Site is whitelisted');
-            return;
+        createOverlay() {
+            if (this.overlay) return;
+
+            // Create styles
+            const style = document.createElement('style');
+            style.id = 'halalvision-styles';
+            style.textContent = `
+                #halalvision-overlay {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100vw;
+                    height: 100vh;
+                    background: rgba(10, 20, 15, 0.95);
+                    backdrop-filter: blur(20px);
+                    z-index: 2147483647;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                    color: #e0e0e0;
+                    transition: opacity 0.8s ease, visibility 0.8s;
+                    overflow: hidden;
+                }
+
+                #halalvision-content {
+                    text-align: center;
+                    max-width: 600px;
+                    width: 90%;
+                    animation: hvFadeIn 1s ease-out;
+                }
+
+                .hv-logo {
+                    font-size: 64px;
+                    margin-bottom: 20px;
+                    filter: drop-shadow(0 0 15px rgba(46, 204, 113, 0.5));
+                }
+
+                .hv-title {
+                    font-size: 28px;
+                    font-weight: 600;
+                    margin-bottom: 10px;
+                    background: linear-gradient(135deg, #2ecc71, #27ae60);
+                    -webkit-background-clip: text;
+                    -webkit-text-fill-color: transparent;
+                    letter-spacing: 1px;
+                }
+
+                .hv-status {
+                    font-size: 16px;
+                    color: #95a5a6;
+                    margin-bottom: 30px;
+                }
+
+                #halalvision-logs {
+                    background: rgba(0, 0, 0, 0.3);
+                    border: 1px solid rgba(46, 204, 113, 0.2);
+                    border-radius: 12px;
+                    height: 250px;
+                    width: 100%;
+                    overflow-y: auto;
+                    padding: 15px;
+                    text-align: left;
+                    font-family: 'Consolas', 'Monaco', monospace;
+                    font-size: 13px;
+                    line-height: 1.6;
+                    scrollbar-width: thin;
+                    scrollbar-color: #2ecc71 rgba(0,0,0,0.1);
+                }
+
+                #halalvision-logs::-webkit-scrollbar {
+                    width: 6px;
+                }
+                #halalvision-logs::-webkit-scrollbar-thumb {
+                    background: #2ecc71;
+                    border-radius: 10px;
+                }
+
+                .log-entry {
+                    margin-bottom: 4px;
+                    border-left: 2px solid transparent;
+                    padding-left: 8px;
+                    opacity: 0.8;
+                    animation: hvSlideIn 0.3s ease-out;
+                }
+                .log-info { color: #e0e0e0; }
+                .log-success { color: #2ecc71; border-color: #2ecc71; opacity: 1; }
+                .log-warn { color: #f1c40f; border-color: #f1c40f; }
+                .log-error { color: #e74c3c; border-color: #e74c3c; }
+
+                @keyframes hvFadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+                @keyframes hvSlideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
+
+                .hv-footer {
+                    margin-top: 30px;
+                    font-size: 12px;
+                    color: #5d6d7e;
+                }
+            `;
+            document.head.appendChild(style);
+
+            // Create Overlay
+            this.overlay = document.createElement('div');
+            this.overlay.id = 'halalvision-overlay';
+            this.overlay.innerHTML = `
+                <div id="halalvision-content">
+                    <div class="hv-logo">🕌</div>
+                    <div class="hv-title">HalalVision AI</div>
+                    <div class="hv-status" id="hv-status-text">Menyiapkan pelindung pandangan...</div>
+                    <div id="halalvision-logs"></div>
+                    <div class="hv-footer">HalalVision Beta v2.0 • Menjaga pandangan, menjaga hati.</div>
+                </div>
+            `;
+            document.documentElement.appendChild(this.overlay);
+            this.logContainer = this.overlay.querySelector('#halalvision-logs');
+            this.status = this.overlay.querySelector('#hv-status-text');
         }
 
-        // Load ML detector
-        detector = new HalalVisionDetector();
-        await detector.initialize();
+        log(message, type = 'info') {
+            if (!this.logContainer) return;
 
-        // Process existing images with AI
-        await processExistingMedia();
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            const time = new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            entry.innerHTML = `<span style="color: #5d6d7e;">[${time}]</span> ${message}`;
 
-        // Start observing DOM changes
-        startDOMObserver();
+            this.logContainer.appendChild(entry);
+            this.logContainer.scrollTop = this.logContainer.scrollHeight;
 
-        // Periodic scan for missed elements (every 5 seconds)
-        setInterval(processExistingMedia, 5000);
+            if (type === 'success' || type === 'error') {
+                this.status.textContent = message.replace('🕌 HalalVision: ', '');
+            }
+        }
 
-        isInitialized = true;
-        console.log('延 HalalVision: Ready - Menjaga pandangan Anda');
+        finish() {
+            if (this.isFinished) return;
+            this.isFinished = true;
+            this.log('🕌 HalalVision: Pemindaian selesai. Menghapus overlay...', 'success');
+
+            setTimeout(() => {
+                this.overlay.style.opacity = '0';
+                setTimeout(() => {
+                    this.overlay.style.visibility = 'hidden';
+                }, 800);
+            }, 1000);
+        }
     }
+
+    const ui = new HalalVisionUI();
+
+    // Wrap console.log to show in UI
+    const originalLog = console.log;
+    const originalWarn = console.warn;
+    const originalError = console.error;
+
+    console.log = function (...args) {
+        originalLog.apply(console, args);
+        const msg = args.join(' ');
+        if (msg.includes('🕌 HalalVision:')) {
+            ui.log(msg, msg.includes('READY') || msg.includes('selesai') ? 'success' : 'info');
+        }
+    };
+    console.warn = function (...args) {
+        originalWarn.apply(console, args);
+        const msg = args.join(' ');
+        if (msg.includes('🕌 HalalVision:')) ui.log(msg, 'warn');
+    };
+    console.error = function (...args) {
+        originalError.apply(console, args);
+        const msg = args.join(' ');
+        if (msg.includes('🕌 HalalVision:')) ui.log(msg, 'error');
+    };
 
     // Get settings from background
     async function getSettings() {
@@ -82,41 +228,86 @@
 
         async initialize() {
             try {
-                console.log('🕌 HalalVision: Initializing Face-API...');
+                console.log('🕌 HalalVision: Checking dependencies...');
+
+                // Helper to wait for tf_full (our renamed TensorFlow.js)
+                let tfRetry = 0;
+                while (typeof tf_full === 'undefined' && tfRetry < 20) {
+                    await new Promise(r => setTimeout(r, 200));
+                    tfRetry++;
+                }
+
+                if (typeof tf_full === 'undefined') {
+                    console.error('🕌 HalalVision: TensorFlow.js (tf_full) not found in window');
+                    throw new Error('tf_full not found');
+                }
+                console.log('🕌 HalalVision: TensorFlow.js (tf_full) loaded');
 
                 // Helper to wait for global faceapi if needed
                 let retry = 0;
                 while (typeof faceapi === 'undefined' && retry < 20) {
-                    await new Promise(r => setTimeout(r, 100));
+                    await new Promise(r => setTimeout(r, 200));
                     retry++;
                 }
 
                 if (typeof faceapi === 'undefined') {
+                    console.error('🕌 HalalVision: face-api.js not found in window');
                     throw new Error('face-api.js not found');
                 }
+                console.log('🕌 HalalVision: Face-API loaded');
 
                 // Load models from local extension directory
                 const modelPath = chrome.runtime.getURL('libs/models');
+                console.log('🕌 HalalVision: Loading models from:', modelPath);
 
                 await Promise.all([
                     faceapi.nets.tinyFaceDetector.loadFromUri(modelPath),
                     faceapi.nets.ageGenderNet.loadFromUri(modelPath)
-                ]);
+                ]).then(() => {
+                    console.log('🕌 HalalVision: Face-API models loaded successfully');
+                }).catch(err => {
+                    console.error('🕌 HalalVision: Error loading Face-API models:', err);
+                    throw err;
+                });
+
+                // tf_full should have loadGraphModel as it is the full TFJS lib
+                // Debug available keys
+                console.log('🕌 HalalVision: tf_full keys:', Object.keys(tf_full).filter(k => k.startsWith('load') || k === 'io'));
+
+                if (!tf_full.loadGraphModel) {
+                    if (tf_full.io && tf_full.io.loadGraphModel) {
+                        console.log('🕌 HalalVision: Found loadGraphModel under tf_full.io, shimming...');
+                        tf_full.loadGraphModel = tf_full.io.loadGraphModel;
+                    } else {
+                        console.error('🕌 HalalVision: tf_full is defined but missing loadGraphModel. This is unexpected for the full version.');
+                        // Fallback check global tf
+                        if (typeof tf !== 'undefined' && tf.loadGraphModel) {
+                            console.log('🕌 HalalVision: Found global tf.loadGraphModel, aliasing...');
+                            tf_full.loadGraphModel = tf.loadGraphModel;
+                        }
+                    }
+                }
 
                 // Also load BodyPix (it uses tf global)
                 if (typeof bodyPix !== 'undefined') {
+                    console.log('🕌 HalalVision: Loading BodyPix...');
+                    // BodyPix needs tf.loadGraphModel
                     this.bodyModel = await bodyPix.load({
                         architecture: 'MobileNetV1',
                         outputStride: 16,
-                        multiplier: 0.5, // Keep it fast
+                        multiplier: 0.5,
                         quantBytes: 2
                     });
+                    console.log('🕌 HalalVision: BodyPix loaded');
+                } else {
+                    console.warn('🕌 HalalVision: BodyPix not found');
                 }
 
                 this.isLoaded = true;
-                console.log('🕌 HalalVision: AI Models (Face-API + BodyPix) Ready');
+                console.log('🕌 HalalVision: AI Models (Face-API + BodyPix) READY');
             } catch (error) {
                 console.error('🕌 HalalVision: Model load failed:', error);
+                this.isLoaded = false;
             }
         }
 
@@ -128,26 +319,37 @@
                 isFallback: !this.isLoaded
             };
 
-            if (!this.isLoaded) return results; // Fail safe, don't blur if not ready
+            if (!this.isLoaded) {
+                console.warn('🕌 HalalVision: Detector not loaded, skipping analysis');
+                return results;
+            }
 
             try {
                 // 1. Detect Faces & Gender with Face-API
                 if (settings.blurFaces || settings.blurMen || settings.blurWomen) {
                     // Detect all faces with gender
-                    // useTinyFaceDetectorOptions helps performance
                     const detections = await faceapi.detectAllFaces(
                         imageElement,
-                        new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.4 })
+                        new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.3 })
                     ).withAgeAndGender();
+
+                    if (detections.length > 0) {
+                        console.log(`🕌 HalalVision: Detected ${detections.length} faces`);
+                    }
 
                     for (const detection of detections) {
                         const { gender, genderProbability } = detection;
                         const box = detection.detection.box;
 
+                        console.log(`🕌 HalalVision: Gender detected: ${gender} (${(genderProbability * 100).toFixed(1)}%)`);
+
                         // Strict Gender Logic
-                        // Default to safe if probability is low (< 0.6) -> Treat as "Unknown" -> Blur if strict checks enabled
+                        // Default to safe if probability is low (< 0.7) -> Treat as "Unknown"
                         let effectiveGender = gender;
-                        if (genderProbability < 0.6) effectiveGender = 'unknown';
+                        if (genderProbability < 0.7) {
+                            effectiveGender = 'unknown';
+                            console.log(`🕌 HalalVision: Low confidence detection (${(genderProbability * 100).toFixed(1)}%), treating as unknown`);
+                        }
 
                         let shouldBlurFace = false;
 
@@ -156,15 +358,17 @@
                             shouldBlurFace = true;
                         } else {
                             // Specific gender targeting
-                            if (settings.blurMen && effectiveGender === 'male') shouldBlurFace = true;
-                            if (settings.blurWomen && effectiveGender === 'female') shouldBlurFace = true;
+                            if (settings.blurMen && effectiveGender === 'male') {
+                                shouldBlurFace = true;
+                                console.log(`🕌 HalalVision: Flagged male face for blurring`);
+                            }
+                            if (settings.blurWomen && effectiveGender === 'female') {
+                                shouldBlurFace = true;
+                                console.log(`🕌 HalalVision: Flagged female face for blurring`);
+                            }
 
-                            // Safety: If unknown gender, do we blur? 
-                            // Current logic: If user wants to blur EITHER men or women, and we are unsure, 
-                            // safest bet is to blur. BUT user complained about over-blurring.
-                            // So let's be "Innocent until proven guilty" to avoid annoyance, 
-                            // UNLESS user enabled "Blur Faces" (checked above).
-                            // So here we only blur if confident.
+                            // If we have a confident "unknown" or if settings are strict?
+                            // For now, let's stick to confident detections to avoid user annoyance.
                         }
 
                         if (shouldBlurFace) {
@@ -815,52 +1019,52 @@
         window.hvWatchMedia();
     }
 
-    // Listen for messages from background/popup
-    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-        switch (message.action) {
-            case 'settingsUpdated':
-                settings = message.settings;
-                if (!settings.enabled) {
-                    removeAllBlurs();
-                } else {
-                    processExistingMedia();
-                }
-                break;
+    // Initialize extension
+    async function initialize() {
+        if (isInitialized) return;
 
-            case 'siteWhitelisted':
-                removeAllBlurs();
-                break;
+        // Get settings first to see if we should show UI
+        settings = await getSettings();
 
-            case 'blurSpecificImage':
-                // Handle specific image blur
-                break;
-
-            case 'unblurSpecificImage':
-                // Handle specific image unblur
-                break;
+        if (!settings || !settings.enabled) {
+            return;
         }
-        sendResponse({ success: true });
-    });
 
-    // Remove all blurs
-    function removeAllBlurs() {
-        document.querySelectorAll('.halal-vision-wrapper').forEach(wrapper => {
-            const img = wrapper.querySelector('img');
-            if (img) {
-                wrapper.parentNode.insertBefore(img, wrapper);
-                wrapper.remove();
-            }
-        });
+        // Check whitelist
+        const isWhitelisted = await checkWhitelist();
+        if (isWhitelisted) {
+            return;
+        }
 
-        document.querySelectorAll('.halal-vision-video-wrapper').forEach(wrapper => {
-            const video = wrapper.querySelector('video');
-            if (video) {
-                wrapper.parentNode.insertBefore(video, wrapper);
-                wrapper.remove();
-            }
-        });
+        // Show Loading Overlay
+        ui.createOverlay();
+        console.log('🕌 HalalVision: Memulai perlindungan...');
 
-        blurredElements.clear();
+        // Load ML detector
+        detector = new HalalVisionDetector();
+        await detector.initialize();
+
+        if (!detector.isLoaded) {
+            console.error('🕌 HalalVision: Gagal memuat AI. Menghentikan...');
+            setTimeout(() => ui.finish(), 3000);
+            return;
+        }
+
+        // Process existing images with AI
+        console.log('🕌 HalalVision: Memindai halaman untuk konten...');
+        await processExistingMedia();
+
+        // Start observing DOM changes
+        startDOMObserver();
+
+        // Periodic scan for missed elements (every 5 seconds)
+        setInterval(processExistingMedia, 5000);
+
+        isInitialized = true;
+        console.log('🕌 HalalVision: Sistem Aktif - Menjaga pandangan Anda');
+
+        // Finalize UI
+        ui.finish();
     }
 
     // Initialize when DOM is ready
@@ -869,5 +1073,34 @@
     } else {
         initialize();
     }
+
+    // Listen for setting changes from storage (persisted)
+    chrome.storage.onChanged.addListener((changes, area) => {
+        if (area === 'sync' && changes.settings) {
+            console.log('🕌 HalalVision: Settings updated via storage');
+            settings = changes.settings.newValue;
+            if (!settings.enabled) {
+                removeAllBlurs();
+            } else {
+                processExistingMedia();
+            }
+        }
+    });
+
+    // Handle messages from popup/background
+    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+        if (message.action === 'settingsUpdated') {
+            console.log('🕌 HalalVision: Settings updated via message');
+            settings = message.settings;
+            if (!settings.enabled) {
+                removeAllBlurs();
+            } else {
+                processExistingMedia();
+            }
+        } else if (message.action === 'siteWhitelisted') {
+            window.location.reload();
+        }
+        sendResponse({ success: true });
+    });
 
 })();

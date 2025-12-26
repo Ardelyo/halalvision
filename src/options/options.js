@@ -9,6 +9,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         showNotifications: document.getElementById('showNotifications'),
         blurFaces: document.getElementById('blurFaces'),
         blurBodies: document.getElementById('blurBodies'),
+        blurMen: document.getElementById('blurMen'),
+        blurWomen: document.getElementById('blurWomen'),
         processImages: document.getElementById('processImages'),
         processVideos: document.getElementById('processVideos'),
         detectionSensitivity: document.getElementById('detectionSensitivity'),
@@ -62,6 +64,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         elements.showNotifications.checked = settings.showNotifications;
         elements.blurFaces.checked = settings.blurFaces;
         elements.blurBodies.checked = settings.blurBodies;
+        elements.blurMen.checked = settings.blurMen;
+        elements.blurWomen.checked = settings.blurWomen;
         elements.processImages.checked = settings.processImages;
         elements.processVideos.checked = settings.processVideos;
         elements.detectionSensitivity.value = settings.detectionSensitivity;

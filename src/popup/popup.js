@@ -6,6 +6,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const statusText = document.getElementById('statusText');
     const blurFaces = document.getElementById('blurFaces');
     const blurBodies = document.getElementById('blurBodies');
+    const blurMen = document.getElementById('blurMen');
+    const blurWomen = document.getElementById('blurWomen');
     const processVideos = document.getElementById('processVideos');
     const blurIntensity = document.getElementById('blurIntensity');
     const blurValue = document.getElementById('blurValue');
@@ -133,6 +135,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     blurBodies.addEventListener('change', async () => {
         settings.blurBodies = blurBodies.checked;
+        await saveSettings();
+    });
+
+    blurMen.addEventListener('change', async () => {
+        settings.blurMen = blurMen.checked;
+        await saveSettings();
+    });
+
+    blurWomen.addEventListener('change', async () => {
+        settings.blurWomen = blurWomen.checked;
         await saveSettings();
     });
 
